@@ -1,9 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data.SqlClient;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace SsmsSchemaFolders
 {
@@ -31,29 +28,26 @@ namespace SsmsSchemaFolders
                 var exist = Convert.ToInt32(command.ExecuteScalar());
                 if(exist == 0)
                 {
-                    command.CommandText = "CREATE TABLE dbo.[z.SchFld] (\r\n    ID INT IDENTITY(1,1) PRIMARY KEY,\r\n    schemaName VARCHAR(255),\r\n    pattern VARCHAR(255)\r\n);";
+                    command.CommandText = "CREATE TABLE dbo.[z.SchFld] (\r\n    ID INT IDENTITY(1,1) PRIMARY KEY,\r\n    pattern VARCHAR(255)\r\n);";
+                    command.ExecuteNonQuery();
+                    command.CommandText = "insert into dbo.[z.SchFld](pattern) values('{_ .}[c3][c4][c3][c999]');";
                     command.ExecuteNonQuery();
                 }
             }
         }
-        public static Dictionary<string,string> GetPatterns()
+        public static string GetPatterns()
         {
             using (var connection = new SqlConnection(ConnectionString))
             {
-                var dict = new Dictionary<string,string>();
                 connection.Open();
                 var command = new SqlCommand()
                 {
                     Connection = connection,
-                    CommandText = $"select [schemaName],[pattern] from [z.SchFld]"
+                    CommandText = $"select top 1 [pattern] from [z.SchFld]"
                 };
 
-                var reader = command.ExecuteReader();
-                while (reader.Read())
-                {
-                    dict.Add(reader.GetString(0), reader.GetString(1));
-                }
-                return dict;
+                var pattern = command.ExecuteScalar() ?? string.Empty;
+                return pattern.ToString();
             }
         }
     }

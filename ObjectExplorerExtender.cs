@@ -235,7 +235,7 @@ namespace SsmsSchemaFolders
         /// <param name="node">Table node to reorganize</param>
         /// <param name="nodeTag">Tag of new node</param>
         /// <returns>The count of schema nodes.</returns>
-        public int ReorganizeNodes(TreeNode node, string nodeTag, Dictionary<string, string> dictionary)
+        public int ReorganizeNodes(TreeNode node, string nodeTag, string pattern)
         {
             if (node.Nodes.Count <= 1)
                 // 1 is the lazy expanding placeholder node.
@@ -245,7 +245,7 @@ namespace SsmsSchemaFolders
                 //BUG: Doesn't support folder levels. Need to rewrite.
                 return ReorganizeNodesWithClear(node, nodeTag);
 
-            return ReorganizeNodes(node, nodeTag, 1, dictionary);
+            return ReorganizeNodes(node, nodeTag, 1, pattern);
         }
 
         /// <summary>
@@ -255,7 +255,7 @@ namespace SsmsSchemaFolders
         /// <param name="nodeTag">Tag of new node</param>
         /// <param name="folderLevel">The folder level of the current node</param>
         /// <returns>The count of schema nodes.</returns>
-        private int ReorganizeNodes(TreeNode node, string nodeTag, int folderLevel, Dictionary<string,string> dictionary)
+        private int ReorganizeNodes(TreeNode node, string nodeTag, int folderLevel, string databasePatttern)
         {
             if (node.Nodes.Count < GetFolderLevelMinNodeCount(folderLevel))
                 return 0;
@@ -275,10 +275,16 @@ namespace SsmsSchemaFolders
             int folderNodeIndex = -1;
             var newFolderNodes = new List<TreeNode>();
 
-            Dictionary<string, TreeNode> lastNodes = new Dictionary<string, TreeNode>();
+            List<TreeNodeLevel> firstLevelNodes = new List<TreeNodeLevel>();
+            List<TreeNodeLevel> secondLevelNodes = new List<TreeNodeLevel>();
+            List<TreeNodeLevel> thirdLevelNodes = new List<TreeNodeLevel>();
+
+            List<TreeNodeLevel> lastNodes = new List<TreeNodeLevel>();
+
+
             foreach (TreeNode childNode in node.Nodes)
             {
-                TreeNode secondLevel, thirdLevel, fourthLevel = null;
+                TreeNode firstLevel, secondLevel, thirdLevel, fourthLevel = null;
                 //skip schema node folders but make sure they are in the folders list
                 if (childNode.Tag != null && childNode.Tag.ToString() == nodeTag)
                 {
@@ -310,7 +316,7 @@ namespace SsmsSchemaFolders
 
                     folderNode.Name = folderName;
                     folderNode.Text = folderName;
-                    folderNode.Tag = nodeTag;
+                    folderNode.Tag = nodeTag;                   
 
                     if (Options.AppendDot)
                         folderNode.Text += ".";
@@ -325,68 +331,98 @@ namespace SsmsSchemaFolders
                         folderNode.ImageIndex = node.ImageIndex;
                         folderNode.SelectedImageIndex = node.ImageIndex;
                     }
-                    if(dictionary != null)
+                    if(databasePatttern != string.Empty)
                     {
-                        if(dictionary.Count == 0)
+                        try
                         {
-                            lastNodes.Add(folderName, folderNode);
-                        }
-                        else
-                        {
-                            var pattern = dictionary.Where(x=>x.Key == folderName).FirstOrDefault().Value;
-                            if(pattern != null)
+                            int currentIndex = 0;
+                            string schema = string.Empty;
+
+                            // Используем регулярные выражения для извлечения значений из строки
+                            string regex = @"{(.*?)}"; // Паттерн для извлечения значения внутри {}
+                            Match match = Regex.Match(databasePatttern, regex);
+                            string p1 = match.Groups[1].Value; // Значение внутри {}
+
+
+                            regex = @"\[c(\d+)\]"; // Паттерн для извлечения числовых значений внутри []
+                            MatchCollection matches = Regex.Matches(databasePatttern, regex);
+                            // Присваиваем значения переменным
+                            int p2 = Convert.ToInt32(matches[0].Groups[1].Value);
+                            int p3 = Convert.ToInt32(matches[1].Groups[1].Value);
+                            int p4 = Convert.ToInt32(matches[2].Groups[1].Value);
+                            int p5 = Convert.ToInt32(matches[3].Groups[1].Value);
+
+
+                            foreach (char c in folderName)
                             {
-                                int currentIndex = 0;
-                                string schema = string.Empty;
-
-                                // Используем регулярные выражения для извлечения значений из строки
-                                string regex = @"{(.*?)}"; // Паттерн для извлечения значения внутри {}
-                                Match match = Regex.Match(pattern, regex);
-                                string p1 = match.Groups[1].Value; // Значение внутри {}
-
-                                regex = @"\[c(\d+)\]"; // Паттерн для извлечения числовых значений внутри []
-                                MatchCollection matches = Regex.Matches(pattern, regex);
-
-                                // Присваиваем значения переменным
-                                int p2 = Convert.ToInt32(matches[0].Groups[1].Value);
-                                int p3 = Convert.ToInt32(matches[1].Groups[1].Value);
-                                int p4 = Convert.ToInt32(matches[2].Groups[1].Value);
-                                int p5 = Convert.ToInt32(matches[3].Groups[1].Value);
-
-                                //string p1 = "_.";
-                                //int p2 = 3;
-                                //int p3 = 4;
-                                //int p4 = 3;
-                                //int p5 = 999;
-
-                                foreach (char c in folderName)
+                                if (!p1.Contains(c))
                                 {
-                                    if (!p1.Contains(c))
-                                    {
-                                        schema += c;
-                                    }
+                                    schema += c;
                                 }
-                                folderNode.Text = schema.Substring(currentIndex, p2);
-                                currentIndex += p2;
-                                secondLevel = new TreeNode(schema.Substring(currentIndex, p3));
-                                currentIndex += p3;
-                                thirdLevel = new TreeNode(schema.Substring(currentIndex, p4));
-                                currentIndex += p4;
-                                var length = schema.Length - currentIndex > p5 ? p5 : schema.Length - currentIndex;
-                                fourthLevel = new TreeNode(schema.Substring(currentIndex, length));
+                            }
+                            var firstLevelText = schema.Substring(currentIndex, p2);
+                            currentIndex += p2;
+                            var secondLevelText = schema.Substring(currentIndex, p3);
+                            currentIndex += p3;
+                            var thirdLevelText = schema.Substring(currentIndex, p4);
+                            currentIndex += p4;
+                            var length = schema.Length - currentIndex > p5 ? p5 : schema.Length - currentIndex;
+                            var fourthLevelText = schema.Substring(currentIndex, length);
 
-                                folderNode.Nodes.Add(secondLevel);
-                                secondLevel.Nodes.Add(thirdLevel);
-                                thirdLevel.Nodes.Add(fourthLevel);
-
-                                lastNodes.Add(folderName, fourthLevel);
+                            firstLevel = firstLevelNodes.Where(x => x.Node.Text == firstLevelText).FirstOrDefault()?.Node;
+                            if (firstLevel == null) 
+                            {
+                                folderNode.Text = firstLevelText;
                             }
                             else
                             {
-                                lastNodes.Add(folderName, folderNode);
+                                node.Nodes.Remove(folderNode);
+                                folderNode = firstLevel;
+                                folderNode.Text = firstLevelText;
                             }
+                            secondLevel = secondLevelNodes.Where(x => x.Node.Text == secondLevelText).FirstOrDefault()?.Node;
+                            if(secondLevel==null)
+                            {
+                                secondLevel = new TreeNode(secondLevelText);
+                                folderNode.Nodes.Add(secondLevel);
+                            }
+                                
+
+                            thirdLevel = thirdLevelNodes.Where(x => x.Node.Text == thirdLevelText).FirstOrDefault()?.Node;
+                            if (thirdLevel == null)
+                            {
+                                thirdLevel = new TreeNode(thirdLevelText);
+                                secondLevel.Nodes.Add(thirdLevel);
+                            }
+                                
+
+                            fourthLevel = lastNodes.Where(x => x.Node.Text == fourthLevelText).FirstOrDefault()?.Node;
+                            if (fourthLevel == null)
+                            {
+                                fourthLevel = new TreeNode(fourthLevelText);
+                                thirdLevel.Nodes.Add(fourthLevel);
+                            }
+
+                            secondLevelNodes.Add(new TreeNodeLevel(folderName, secondLevel));
+                            thirdLevelNodes.Add(new TreeNodeLevel(folderName, thirdLevel));
+
+                            lastNodes.Add(new TreeNodeLevel(folderName, fourthLevel));
+                        }
+                        catch (ArgumentOutOfRangeException)
+                        {
+                            lastNodes.Add(new TreeNodeLevel(folderName, folderNode));
+                        }
+                        catch (Exception ex)
+                        {
+                            File.AppendAllText(@"D:\log.txt", "ERROR on: "+childNode.Text +" - "  + ex.ToString()  + Environment.NewLine);
+                            lastNodes.Add(new TreeNodeLevel(folderName, folderNode));
                         }
                     }
+                    else
+                    {
+                        lastNodes.Add(new TreeNodeLevel(folderName, folderNode));
+                    }
+                    firstLevelNodes.Add(new TreeNodeLevel(folderName, folderNode));
                 }
 
                 //add node to folder list
@@ -433,7 +469,7 @@ namespace SsmsSchemaFolders
                 }
                 foreach (TreeNode childNode in folders[nodeName])
                 {
-                    var currentLastNode = lastNodes.Where(x => x.Key == nodeName).FirstOrDefault().Value;
+                    var currentLastNode = lastNodes.Where(x => x.ShemaName == nodeName).FirstOrDefault()?.Node;
                     if (currentLastNode == null)
                         continue;
 
@@ -467,7 +503,7 @@ namespace SsmsSchemaFolders
             //process next folder level
             if (folderLevel < 2)
                 foreach (string nodeName in folders.Keys)
-                    ReorganizeNodes(node.Nodes[nodeName], nodeTag, folderLevel + 1, dictionary);
+                    ReorganizeNodes(node.Nodes[nodeName], nodeTag, folderLevel + 1, databasePatttern);
 
             return folders.Count;
         }
@@ -621,6 +657,16 @@ namespace SsmsSchemaFolders
             }
         }
 
+    }
+    public class TreeNodeLevel 
+    {
+        public string ShemaName { get; set; }
+        public TreeNode Node { get; set; }
+        public TreeNodeLevel(string schema, TreeNode node)
+        {
+            ShemaName = schema;
+            Node = node;
+        }
     }
 
 }

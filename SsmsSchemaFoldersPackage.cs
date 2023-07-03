@@ -183,7 +183,7 @@ namespace SsmsSchemaFolders
         /// Adds new nodes and move items between them
         /// </summary>
         /// <param name="node"></param>
-        private void ReorganizeFolders(TreeNode node, Dictionary<string, string> dictionary, bool expand = false)
+        private void ReorganizeFolders(TreeNode node, string pattern, bool expand = false)
         {
             debug_message("ReorganizeFolders");
             try
@@ -206,7 +206,7 @@ namespace SsmsSchemaFolders
                             case "Server/Database/SystemViewsFolder":
                             case "Server/Database/SystemStoredProceduresFolder":
                                 //node.TreeView.Cursor = Cursors.WaitCursor;
-                                var schemaFolderCount = _objectExplorerExtender.ReorganizeNodes(node, SchemaFolderNodeTag, dictionary);
+                                var schemaFolderCount = _objectExplorerExtender.ReorganizeNodes(node, SchemaFolderNodeTag, pattern);
                                 if (expand && schemaFolderCount == 1)
                                 {
                                     node.LastNode.Expand();
@@ -292,8 +292,8 @@ namespace SsmsSchemaFolders
 
                             if(e.Node.Level>2)
                             {
-                                var dictionary = SQL.GetPatterns();
-                                ReorganizeFolders(e.Node, dictionary, true);
+                                var pattern = SQL.GetPatterns();
+                                ReorganizeFolders(e.Node, pattern, true);
                             }
                             else 
                                 ReorganizeFolders(e.Node, null, true);
