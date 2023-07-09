@@ -5,6 +5,7 @@ This an extension for SQL Server Management Studio 2012, 2014, 2016, 17, 18 and 
 It groups sql objects in Object Explorer (tables, views, etc.) into schema folders.
 
 ![Object Explorer](ObjectExplorerView.png)
+![image](https://github.com/therealcodeelo/SsmsSchemaFolders/assets/105579236/44f8b3f3-a46d-4e47-ab20-adf45dbfefd7)
 
 Source code, documentation and issues can be found at <https://github.com/nicholas-ross/SSMS-Schema-Folders>
 
