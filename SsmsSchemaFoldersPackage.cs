@@ -341,24 +341,29 @@ namespace SsmsSchemaFolders
                 if (e.Node.GetNodeCount(false) == 1)
                     return;
 
-                if (e.Node.Level == 2)
+                if (e.Node.Level > 1)
                 {
-                    string input = e.Node.FullPath;
                     // Паттерн для поиска сервера
                     string serverPattern = @"^.*?(?=\s\()";
-                    // Паттерн для поиска базы данных
-                    string databasePattern = @"(?<=Базы данных\\)\w+";
+                    string input = e.Node.FullPath;
+                    string enDatabasePattern = @"(?<=Databases\\)\w+";
+                    string rusDatabasePattern = @"(?<=Базы данных\\)\w+";
 
                     Match serverMatch = Regex.Match(input, serverPattern);
-                    Match databaseMatch = Regex.Match(input, databasePattern);
+                    Match enDatabaseMatch = Regex.Match(input, enDatabasePattern);
+                    Match rusDatabaseMatch = Regex.Match(input, rusDatabasePattern);
+
+                    if (enDatabaseMatch.Success)
+                        SQL.DatabaseName = enDatabaseMatch.Groups[0].Value;
+
+                    if (rusDatabaseMatch.Success)
+                        SQL.DatabaseName = rusDatabaseMatch.Groups[0].Value;
 
                     if (serverMatch.Success)
                         SQL.ServerName = serverMatch.Groups[0].Value;
 
-                    if (databaseMatch.Success)
-                        SQL.DatabaseName = databaseMatch.Groups[0].Value;
-
                     SQL.CheckTableExist();
+
                 }
 
                 if (_objectExplorerExtender.GetNodeExpanding(e.Node))
@@ -409,6 +414,5 @@ namespace SsmsSchemaFolders
                 message,
                 SsmsSchemaFoldersPackage.PackageGuid);
         }
-
     }
 }

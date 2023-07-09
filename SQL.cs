@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Data.SqlClient;
 
 namespace SsmsSchemaFolders
@@ -8,7 +7,6 @@ namespace SsmsSchemaFolders
     {
         private static string _serverName;
         private static string _databaseName;
-
         public static string ServerName { get => _serverName; set => _serverName = value; }
         public static string DatabaseName { get => _databaseName; set => _databaseName = value; }
         public static string ConnectionString
@@ -26,7 +24,7 @@ namespace SsmsSchemaFolders
                     CommandText = "IF OBJECT_ID('z.SchFld', 'U') IS NOT NULL\r\n    SELECT '1'\r\nELSE\r\n    SELECT '0'"
                 };
                 var exist = Convert.ToInt32(command.ExecuteScalar());
-                if(exist == 0)
+                if (exist == 0)
                 {
                     command.CommandText = "CREATE TABLE dbo.[z.SchFld] (\r\n    ID INT IDENTITY(1,1) PRIMARY KEY,\r\n    pattern VARCHAR(255)\r\n);";
                     command.ExecuteNonQuery();
@@ -37,18 +35,26 @@ namespace SsmsSchemaFolders
         }
         public static string GetPatterns()
         {
-            using (var connection = new SqlConnection(ConnectionString))
+            try
             {
-                connection.Open();
-                var command = new SqlCommand()
+                using (var connection = new SqlConnection(ConnectionString))
                 {
-                    Connection = connection,
-                    CommandText = $"select top 1 [pattern] from [z.SchFld]"
-                };
+                    connection.Open();
+                    var command = new SqlCommand()
+                    {
+                        Connection = connection,
+                        CommandText = $"select top 1 [pattern] from z.SchFld"
+                    };
 
-                var pattern = command.ExecuteScalar() ?? string.Empty;
-                return pattern.ToString();
+                    var pattern = command.ExecuteScalar() ?? string.Empty;
+                    return pattern.ToString();
+                }
             }
+            catch (Exception)
+            {
+                return string.Empty;
+            }
+            
         }
     }
 }

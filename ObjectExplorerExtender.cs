@@ -414,7 +414,7 @@ namespace SsmsSchemaFolders
                         }
                         catch (Exception ex)
                         {
-                            File.AppendAllText(@"D:\log.txt", "ERROR on: "+childNode.Text +" - "  + ex.ToString()  + Environment.NewLine);
+                           // File.AppendAllText(@"D:\log.txt", "ERROR on: "+childNode.Text +" - "  + ex.ToString()  + Environment.NewLine);
                             lastNodes.Add(new TreeNodeLevel(folderName, folderNode));
                         }
                     }
